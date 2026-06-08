@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Results — DiagnosAI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="result-page">
+
+    <!-- ===================== HEADER ===================== -->
+    <header class="site-header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-icon">⚕</span>
+                <span class="logo-text">DiagnosAI</span>
+            </div>
+            <p class="header-tagline">Machine Learning Disease Prediction System</p>
+        </div>
+    </header>
+
+    <!-- ===================== RESULTS HERO ===================== -->
+    <section class="results-hero">
+        <h1 class="results-title">Prediction Results</h1>
+
+        <!-- Symptoms the user selected -->
+        <div class="symptoms-used">
+            <p class="symptoms-label">Symptoms analysed:</p>
+            <div class="symptoms-pills">
+                {% for symptom in selected_symptoms %}
+                <span class="pill pill-result">{{ symptom }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== MAIN RESULTS ===================== -->
+    <main class="main-container">
+
+        <!-- ------------------------------------------------- -->
+        <!-- TOP 3 PREDICTIONS (Random Forest — Primary Model) -->
+        <!-- ------------------------------------------------- -->
+        <section class="predictions-section">
+            <h2 class="section-title">
+                Top 3 Predicted Diseases
+                <span class="model-tag">Random Forest</span>
+            </h2>
+
+            <div class="predictions-grid">
+                {% for result in results %}
+                <div class="prediction-card rank-{{ result.rank }}">
+
+                    <!-- Rank badge -->
+                    <div class="rank-badge">
+                        {% if result.rank == 1 %}🥇{% elif result.rank == 2 %}🥈{% else %}🥉{% endif %}
+                        #{{ result.rank }}
+                    </div>
+
+                    <!-- Disease name -->
+                    <h3 class="disease-name">{{ result.disease }}</h3>
+
+                    <!-- Confidence bar -->
+                    <div class="confidence-wrapper">
+                        <div class="confidence-label">
+                            <span>Confidence</span>
+                            <strong>{{ result.confidence }}%</strong>
+                        </div>
+                        <div class="confidence-bar-bg">
+                            <div
+                                class="confidence-bar-fill"
+                                style="width: {{ result.confidence }}%"
+                            ></div>
+                        </div>
+                    </div>
+
+                    <!-- Description accordion -->
+                    <div class="info-block">
+                        <button class="accordion-toggle" onclick="toggleAccordion(this)">
+                            📋 Description <span class="toggle-icon">▼</span>
+                        </button>
+                        <div class="accordion-content">
+                            <p>{{ result.description }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Precautions accordion -->
+                    <div class="info-block">
+                        <button class="accordion-toggle" onclick="toggleAccordion(this)">
+                            🛡️ Precautions <span class="toggle-icon">▼</span>
+                        </button>
+                        <div class="accordion-content">
+                            <ul class="precautions-list">
+                                {% for precaution in result.precautions %}
+                                <li>{{ precaution }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- ------------------------------------------------- -->
+        <!-- MODEL COMPARISON TABLE                            -->
+        <!-- ------------------------------------------------- -->
+        <section class="comparison-section">
+            <h2 class="section-title">Model Comparison
+                <span class="model-tag">Top Prediction per Model</span>
+            </h2>
+
+            <div class="comparison-table-wrapper">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>Top Predicted Disease</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for model_name, prediction in model_comparison.items() %}
+                        <tr class="{% if prediction == results[0].disease %}match-row{% endif %}">
+                            <td class="model-name-cell">{{ model_name }}</td>
+                            <td class="prediction-cell">{{ prediction }}</td>
+                            <td class="status-cell">
+                                {% if prediction == results[0].disease %}
+                                <span class="badge badge-match">✓ Agrees</span>
+                                {% else %}
+                                <span class="badge badge-diff">≠ Differs</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ------------------------------------------------- -->
+        <!-- DISCLAIMER + BACK BUTTON                          -->
+        <!-- ------------------------------------------------- -->
+        <div class="bottom-actions">
+            <div class="disclaimer-box">
+                ⚠️ <strong>Medical Disclaimer:</strong> These predictions are generated by machine learning models trained on symptom data and are intended for <strong>educational purposes only</strong>. They are not a substitute for professional medical advice, diagnosis, or treatment. Please consult a licensed healthcare provider.
+            </div>
+
+            <a href="/" class="back-btn">← Predict Again</a>
+        </div>
+
+    </main>
+
+    <!-- ===================== FOOTER ===================== -->
+    <footer class="site-footer">
+        <p>⚠️ This tool is for <strong>educational purposes only</strong>. Always consult a qualified medical professional for diagnosis and treatment.</p>
+        <p class="footer-credit">Disease Prediction Using ML &nbsp;|&nbsp; Final Year Project</p>
+    </footer>
+
+    <!-- ===================== JAVASCRIPT ===================== -->
+    <script>
+        // -------------------------------------------------------
+        // Accordion toggle for description / precautions blocks
+        // -------------------------------------------------------
+        function toggleAccordion(btn) {
+            const content = btn.nextElementSibling;
+            const icon    = btn.querySelector(".toggle-icon");
+
+            if (content.style.maxHeight) {
+                // Close
+                content.style.maxHeight = null;
+                icon.textContent = "▼";
+                btn.classList.remove("open");
+            } else {
+                // Open
+                content.style.maxHeight = content.scrollHeight + "px";
+                icon.textContent = "▲";
+                btn.classList.add("open");
+            }
+        }
+
+        // Auto-open the first prediction card's description on page load
+        window.addEventListener("DOMContentLoaded", () => {
+            const firstToggle = document.querySelector(".prediction-card.rank-1 .accordion-toggle");
+            if (firstToggle) toggleAccordion(firstToggle);
+
+            // Animate confidence bars
+            setTimeout(() => {
+                document.querySelectorAll(".confidence-bar-fill").forEach(bar => {
+                    bar.style.transition = "width 1s ease";
+                });
+            }, 100);
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disease Prediction System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- ===================== HEADER ===================== -->
+    <header class="site-header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-icon">⚕</span>
+                <span class="logo-text">DiagnosAI</span>
+            </div>
+            <p class="header-tagline">Machine Learning Disease Prediction System</p>
+        </div>
+    </header>
+
+    <!-- ===================== HERO ===================== -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">What symptoms<br>are you experiencing?</h1>
+            <p class="hero-sub">Select your symptoms below. Our ML models will predict the most likely diseases and provide descriptions and precautions.</p>
+        </div>
+        <div class="hero-badge">
+            <span>4 ML Models</span>
+            <span>42 Diseases</span>
+            <span>132 Symptoms</span>
+        </div>
+    </section>
+
+    <!-- ===================== MAIN FORM ===================== -->
+    <main class="main-container">
+
+        <!-- Error message (shown if user submits without selecting symptoms) -->
+        {% if error %}
+        <div class="error-banner">
+            ⚠️ {{ error }}
+        </div>
+        {% endif %}
+
+        <form action="/predict" method="POST" id="symptomForm">
+
+            <!-- Search bar to filter symptoms -->
+            <div class="search-bar-wrapper">
+                <input
+                    type="text"
+                    id="symptomSearch"
+                    placeholder="🔍  Search symptoms — e.g. fever, headache, cough..."
+                    class="symptom-search"
+                    oninput="filterSymptoms()"
+                    autocomplete="off"
+                />
+                <div class="selected-count" id="selectedCount">0 symptoms selected</div>
+            </div>
+
+            <!-- Selected symptoms pills (shown at top once selected) -->
+            <div class="selected-pills" id="selectedPills"></div>
+
+            <!-- Symptom grid — all 132 checkboxes -->
+            <div class="symptom-grid" id="symptomGrid">
+                {% for symptom in symptoms %}
+                <label class="symptom-card" id="card-{{ loop.index }}">
+                    <input
+                        type="checkbox"
+                        name="symptoms"
+                        value="{{ symptom }}"
+                        onchange="updateSelected(this)"
+                    />
+                    <span class="symptom-label">{{ symptom }}</span>
+                    <span class="check-icon">✓</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <!-- Submit button -->
+            <div class="submit-wrapper">
+                <button type="submit" class="predict-btn" id="predictBtn">
+                    <span class="btn-text">Predict Disease</span>
+                    <span class="btn-arrow">→</span>
+                </button>
+                <button type="button" class="clear-btn" onclick="clearAll()">Clear All</button>
+            </div>
+
+        </form>
+    </main>
+
+    <!-- ===================== FOOTER ===================== -->
+    <footer class="site-footer">
+        <p>⚠️ This tool is for <strong>educational purposes only</strong>. Always consult a qualified medical professional for diagnosis and treatment.</p>
+        <p class="footer-credit">Disease Prediction Using ML &nbsp;|&nbsp; Final Year Project</p>
+    </footer>
+
+    <!-- ===================== JAVASCRIPT ===================== -->
+    <script>
+        // Track selected symptoms for live pill display
+        let selectedSymptoms = new Set();
+
+        // -------------------------------------------------------
+        // Filter symptoms by search input
+        // -------------------------------------------------------
+        function filterSymptoms() {
+            const query = document.getElementById("symptomSearch").value.toLowerCase();
+            const cards = document.querySelectorAll(".symptom-card");
+
+            cards.forEach(card => {
+                const label = card.querySelector(".symptom-label").textContent.toLowerCase();
+                card.style.display = label.includes(query) ? "flex" : "none";
+            });
+        }
+
+        // -------------------------------------------------------
+        // Update selected count and pills whenever checkbox changes
+        // -------------------------------------------------------
+        function updateSelected(checkbox) {
+            const symptom = checkbox.value;
+
+            if (checkbox.checked) {
+                selectedSymptoms.add(symptom);
+                checkbox.closest(".symptom-card").classList.add("selected");
+            } else {
+                selectedSymptoms.delete(symptom);
+                checkbox.closest(".symptom-card").classList.remove("selected");
+            }
+
+            renderPills();
+            updateCount();
+        }
+
+        // -------------------------------------------------------
+        // Render selected symptom pills above the grid
+        // -------------------------------------------------------
+        function renderPills() {
+            const container = document.getElementById("selectedPills");
+            container.innerHTML = "";
+
+            selectedSymptoms.forEach(symptom => {
+                const pill = document.createElement("span");
+                pill.className = "pill";
+                pill.innerHTML = `${symptom} <button type="button" onclick="removePill('${symptom}')">×</button>`;
+                container.appendChild(pill);
+            });
+        }
+
+        // -------------------------------------------------------
+        // Remove a symptom by clicking × on its pill
+        // -------------------------------------------------------
+        function removePill(symptom) {
+            selectedSymptoms.delete(symptom);
+
+            // Uncheck the corresponding checkbox
+            document.querySelectorAll(".symptom-card input").forEach(cb => {
+                if (cb.value === symptom) {
+                    cb.checked = false;
+                    cb.closest(".symptom-card").classList.remove("selected");
+                }
+            });
+
+            renderPills();
+            updateCount();
+        }
+
+        // -------------------------------------------------------
+        // Update the "X symptoms selected" counter
+        // -------------------------------------------------------
+        function updateCount() {
+            const count = selectedSymptoms.size;
+            document.getElementById("selectedCount").textContent =
+                count === 0 ? "0 symptoms selected"
+                : count === 1 ? "1 symptom selected"
+                : `${count} symptoms selected`;
+        }
+
+        // -------------------------------------------------------
+        // Clear all selected symptoms
+        // -------------------------------------------------------
+        function clearAll() {
+            selectedSymptoms.clear();
+            document.querySelectorAll(".symptom-card input").forEach(cb => {
+                cb.checked = false;
+                cb.closest(".symptom-card").classList.remove("selected");
+            });
+            renderPills();
+            updateCount();
+        }
+    </script>
+
+</body>
+</html>
