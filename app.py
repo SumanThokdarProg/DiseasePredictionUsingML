@@ -253,4 +253,4 @@ def api_predict():
 if __name__ == "__main__":
     # debug=True means Flask will auto-reload when you save changes
     # Remove debug=True when deploying to production
-    app.run(debug=True)
+    app.run(host="192.168.0.123", port=5000, debug=True)
